@@ -1,4 +1,4 @@
-clear gas, clc
+clear gas
 
 %% Standard Atmosphere (SI)
 atm = readtable('std_atm.csv');

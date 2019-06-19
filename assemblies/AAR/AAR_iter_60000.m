@@ -2,29 +2,40 @@
 % Aerospace Propulsion Final Project - Part 1
 clear, clc, close all
 run('startup')
+run('property_database')
+
+% Run the debug scenario?
+debug = 0;
 
 % Gamma
 g = 1.4;
- 
-% Choose the study parameter values
-A0s = linspace(0.5,15,200);
-phis = [1 2 10 1000];
+
+if debug == 0    
+    % Choose the study parameter values
+    A0s = linspace(0.5,15,200);
+    phis = [1 2 10 1000];     
+else   
+    A0s = 4;
+    phis = 2;   
+end
+
+
 
 % Specify flight condition values
-% Launch (flight condition 1)
-h1 = 30000; % 30000 ft
-M1 = 0.8;
-pi_d_1 = 0.96;
-Cd = 0.2;
-FN_g = 4000; % Required thrust
 
+% Cruise (flight condition 2)
+h1 = 60000; % 60000 ft
+M1 = 4;
+pi_d_1 = 0.669;
+Cd = 0.4;
+FN_g = 5000; % required thrust
 
 % Freestream conditions (station 0) (flight condition 1)
-Ttrto = M_Tt_T_inv(M1,g);
-Ptrto = M_Pt_P_inv(M1,g);
+Ttrto = interp1(compflow.M,compflow.Tt_T,M1);
+Ptrto = interp1(compflow.M,compflow.Pt_P,M1);
 
 Tt0 = Ttrto * interp1(atm.h,atm.t,h1);
-Pt0 = Ptrto * interp1(atm.h,atm.P,h1);
+Pt0 = 22738;
 
 T0  = Tt0/Ttrto;
 P0  = Pt0/Ptrto;
@@ -32,11 +43,10 @@ P0  = Pt0/Ptrto;
 u0 = M1*sqrt(g*gas.prop.R_dryair*T0);
 rho0 = P0/(gas.prop.R_dryair*T0);
 
-mft0 = mft_calc(M1,g);
+mft0 = interp1(compflow.M,compflow.mft,M1);
 
 for m = 1:length(phis)
     for n = 1:length(A0s)
-        
         
         % Select an A0 and a chamber equivalence ratio (phi)
         phi = phis(m);
@@ -50,25 +60,29 @@ for m = 1:length(phis)
         Pt15 = pi_d_1*Pt0;
         
         % For the legislated M15=0.2, all properties at 15 are now specified.
-        M15   = 0.1; % Given
-        Tt15  = Tt0;
-        Pt15  = Pt15;
-        P15   = Pt15/M_Pt_P_inv(M15,g);
-        mft15 = mft_calc(M15,g);
-        A15   = mdot15*sqrt(gas.prop.R_dryair*Tt15)/(Pt15*mft15);
-        T15   = Tt15/M_Tt_T_inv(M15,g);
-        u15   = M15*sqrt(g*gas.prop.R_dryair*T15);
+        M15 = 0.2;
+        Tt15 = Tt0;
+        Pt15 = Pt15;
+        P15 = Pt15/M_Pt_P_inv(M15,g);
+        mft15 = interp1(compflow.M,compflow.mft,M15);
+        A15 = mdot15*sqrt(gas.prop.R_dryair*Tt15)/(Pt15*mft15);
+        T15 = Tt15/M_Tt_T_inv(M15,g);
+        u15 = M15*sqrt(g*gas.prop.R_dryair*T15);
         
         % Find mdot_c by regula falsi
-        MC_l = 0;
-        MC_h = 1;
-        MC_g = (MC_h+MC_l)/2;
+        if debug == 0
+            MC_l = 0;
+            MC_h = 99;
+            MC_g = (MC_h+MC_l)/2;
+        else 
+            MC_g =  .1716;
+        end
         
         exit = false;
         while exit == false
             % For the selected phi, (and beta =0) compute mass flows of H and O.
-            yO = 32/(4*phi+32); % gas.O2.MM*1/(gas.H2.MM*2*phi+gas.O2.MM*2*phi);
-            yH = 4*phi/(4*phi+32);% gas.H2.MM*2*phi/(gas.H2.MM*2*phi+gas.O2.MM*1);
+            yO =  32/(4*phi+32); % gas.O2.MM*1/(gas.H2.MM*2*phi+gas.O2.MM*2*phi);
+            yH =  4*phi/(4*phi+32);% gas.H2.MM*2*phi/(gas.H2.MM*2*phi+gas.O2.MM*1);
             yN = 0;
             
             mdotO = yO*MC_g;
@@ -168,7 +182,7 @@ for m = 1:length(phis)
             A9    = A8*mft_calc(M8,g)/mft_calc(M9,g);
             
             % Gross Thrust
-            Cfg = 0.96;         % Given
+            Cfg = 0.96;     % Given
             Fg  = Cfg*mdot9*u9; % Pressures equal and cancel out
             
             % Subtract ram drag and cowl drag to get net thrust, FN.
@@ -176,10 +190,9 @@ for m = 1:length(phis)
             Dram = mdot0*u0;
             Dcowl = .5*rho0*u0^2*Cd*Acowl;
             FN = Fg-Dram-Dcowl; % Last equation on slide 5 on slide set d.
-
             
             % If FN does not match required for the flight condition, update mdot_c.
-            if FN < FN_g - 0.001 || FN > FN_g + 0.001
+            if FN < FN_g - 0.01 || FN > FN_g + 0.01
                 if FN < FN_g
                     MC_l = MC_g;
                 else
@@ -188,14 +201,14 @@ for m = 1:length(phis)
                 
                 MC_g = (MC_h+MC_l)/2;
                 
-            else                   
+            else
                 exit = true;
             end
             
         end
         
         % Data Collection
-        % mc is now known, get outputs 
+        % mc is now known, get outputs
         TSFC(m,n) = mdotx*32.174*3600/FN; % --> lbm/hr
         Isp(m,n)  = 3600/TSFC(m,n);
         ST(m,n)   = FN/mdot0;
@@ -210,11 +223,11 @@ for i = 1:length(phis)
     legend('show')
     
     figure(2); hold on
-    plot(A0s,Isp(i,:), 'DisplayName',['Phi = ', num2str(phis(i))])
+    plot(A0s,Isp(i,:),'DisplayName',['Phi = ', num2str(phis(i))])
     legend('show')
     
     figure(3); hold on
-    plot(A0s,ST(i,:), 'DisplayName',['Phi = ', num2str(phis(i))])
+    plot(A0s,ST(i,:),'DisplayName',['Phi = ', num2str(phis(i))])
     legend('show')
 end
 
@@ -228,6 +241,5 @@ ylabel('Isp [s]')
 
 figure(3)
 xlabel('A0 [ft^2]')
-ylabel('Specific Thrust [lbs s/slug)]')
-
+ylabel('Specific Fuel Consumption [lbs s/slug)]')
 

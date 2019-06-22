@@ -13,7 +13,7 @@ pi_d = slope*M0 + intercept;
 % Model flow across the inlet
 Tt15 = Tt0; % isentropic
 Pt15 = pi_d*Pt0; % 
-
+P15 = Pt15/M_Pt_P_inv(M15,g);
 
 end
 

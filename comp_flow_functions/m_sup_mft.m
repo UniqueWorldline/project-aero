@@ -20,6 +20,7 @@ while true
                'Iterator increments mach by 0.01 mach each loop.'])
     else
         M_sup = M;
+        disp('Returning')
         return
     end
     

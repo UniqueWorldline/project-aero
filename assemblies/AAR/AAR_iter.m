@@ -5,14 +5,14 @@ run('startup')
 run('property_database')
 
 % Run the debug scenario?
-debug = 1;
+debug = 0;
 
 % Gamma
 g = 1.4;
 
 if debug == 0    
     % Choose the study parameter values
-    A0s = linspace(0.5,15,200);
+    A0s = linspace(0.8,15,50);
     phis = [1 2 10 1000];     
 else   
     A0s = 4;
@@ -43,6 +43,7 @@ mft0 = mft_calc(M0,g);
 
 % Begin iterating over A0 and phi
 for m = 1:length(phis)
+    disp(['evaluating phi = ', num2str(phis(m))])
     for n = 1:length(A0s)
         
         % Select an A0 and a chamber equivalence ratio (phi)
@@ -136,7 +137,7 @@ for m = 1:length(phis)
             
             %% Station 7 Properties
             
-            % Find R_7
+            % Find R_7 and Cp7
             yO_15    = gas.O2.m_frac;
             yN_15    = gas.N2.m_frac;
             
@@ -249,5 +250,5 @@ ylabel('Isp [s]')
 
 figure(3)
 xlabel('A0 [ft^2]')
-ylabel('Specific Fuel Consumption [lbs s/slug)]')
+ylabel('Specific Thrust [lbs s/slug)]')
 

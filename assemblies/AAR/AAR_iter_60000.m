@@ -24,15 +24,14 @@ end
 % Specify flight condition values
 
 % Cruise (flight condition 2)
-h1 = 60000; % 60000 ft
-M1 = 4;
-pi_d_1 = 0.669;
+h = 60000; % 60000 ft
+M0 = 4;
 Cd = 0.4;
 FN_g = 5000; % required thrust
 
 % Freestream conditions (station 0) (flight condition 1)
-Ttrto = interp1(compflow.M,compflow.Tt_T,M1);
-Ptrto = interp1(compflow.M,compflow.Pt_P,M1);
+Ttrto = M_Tt_T_inv(M0,g);
+Ptrto = M_Pt_P_inv(M0,g);
 
 Tt0 = Ttrto * interp1(atm.h,atm.t,h1);
 Pt0 = 22738;
@@ -59,15 +58,19 @@ for m = 1:length(phis)
         % Flight condition and recovery determine Pt15.
         Pt15 = pi_d_1*Pt0;
         
-        % For the legislated M15=0.2, all properties at 15 are now specified.
-        M15 = 0.2;
-        Tt15 = Tt0;
-        Pt15 = Pt15;
-        P15 = Pt15/M_Pt_P_inv(M15,g);
-        mft15 = interp1(compflow.M,compflow.mft,M15);
-        A15 = mdot15*sqrt(gas.prop.R_dryair*Tt15)/(Pt15*mft15);
-        T15 = Tt15/M_Tt_T_inv(M15,g);
-        u15 = M15*sqrt(g*gas.prop.R_dryair*T15);
+        % INLET
+        M15 = 0.2; % This inlet was legislated to cause M15 to be 0.2
+
+        [output] = ATRR_inlet(mdot0, Pt0, Tt0, M1, M15, g);
+        Tt15   = output(1);
+        T15    = output(2);
+        Pt15   = output(3);
+        P15    = output(4);
+        mdot15 = output(5);
+        mft15  = output(6);
+        A15    = output(7);
+        u15    = output(8);
+        
         
         % Find mdot_c by regula falsi
         if debug == 0

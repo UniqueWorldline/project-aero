@@ -6,5 +6,9 @@ g1 = 2/(gamma-1);
 
 M = (g1*(ttt-1))^.5;
 
+if imag(M) ~= 0
+    error('Mach number is complex')
+end
+
 end
 

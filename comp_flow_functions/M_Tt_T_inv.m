@@ -4,6 +4,6 @@ function [ ttt ] = M_Tt_T_inv(M,gamma)
 
 g1 = (gamma-1)/2;
 
-ttt = 1 + g1*M^2;
+ttt = 1 + g1*M.^2;
 
 end

@@ -1,30 +1,33 @@
-function [M_sub] = m_sub_mft(mft,gamma,e)
+function [M_sub] = m_sub_mft(mft,gamma,tol)
 %M_SUB_MFT find the subsonic mach number of the mass flow function value.
 %   [ M_SUB ] = M_SUB_MFT( MFT, GAMMA, ERROR ) is the functional form.
 %   error is the acceptable deviation of the iterated mft_i from the given
 %   mft.
 
-% Start iterating at mach equals 0
-M = 0;
+a = 0;
+b = 1;
+f = @(M) mft_calc(M,gamma)-mft;
+
 
 % Iterate until 
-while true
+while b-a > tol
+    M = a + (b-a)/2;
     
-    mft_i = mft_calc(M,gamma);
-    
-    if abs(mft-mft_i) > e && M < 1
-        M = M + 0.001;
-        continue
-    elseif M >= 1
-        error(['Iterator failed to find mach number to desired precision. ',...
-               'Iterator increments mach by 0.01 mach each loop.'])
+    if f(M)*f(a) > 0
+        a = M;
     else
-        M_sub = M;
-        return
-    end
-    
-    
+        b = M;
+    end 
 end
+
+if f(M) > 0.1 || f(M) < -0.1
+    warning(['Regula falsi is not accurate to within 10^-1. ',...
+             'Check the answer manually.'])
+         
+    M = -1;
+end
+
+M_sub = M;
 
 end
 

@@ -5,6 +5,6 @@ function [ ptp ] = M_Pt_P_inv(M,gamma)
 g1 = (gamma-1)/2;
 g2 = gamma/(gamma-1);
 
-ptp = (1+g1*M^2)^g2;
+ptp = (1+g1.*M.^2).^g2;
 
 end

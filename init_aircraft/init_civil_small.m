@@ -24,4 +24,9 @@ plane.mass.payload = 0;
 plane.mass.passengers = total_passenger_mass;
 
 
+%% Propulsion Forces
+plane.prop.num_tiny_tjet = 2;
+plane.prop.thrust = 
+
+
 clearvars -except plane
